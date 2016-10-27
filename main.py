@@ -5,6 +5,11 @@ from bs4 import Tag
 from bs4 import BeautifulSoup
 import urllib.request
 import json
+import codecs
+from time import strftime
+import datetime
+from datetime import timedelta
+import re
 
 # constants
 API_KEY = "AIzaSyAc5hS42qW0TcJ8kGjQct6eIF13teg59VA"
@@ -15,8 +20,9 @@ best_videos = []
 
 
 class Video:
-    def __init__(self, title, data, description, comments=0, likes=0, watches=0):
+    def __init__(self, title, id, data, description = "", comments=0, likes=0, watches=0):
         self.title = title
+        self.id = id
         self.data = data
         self.description = description
         self.comments = comments
@@ -30,14 +36,14 @@ class Video:
 
 
 def update_information():
-    html = open('index.html', 'r', encoding="utf-8")
+    html = codecs.open('index.html', 'r', encoding="utf-8")
     from bs4 import BeautifulSoup
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = BeautifulSoup(html.read(), 'html.parser')
 
     tbody_found = soup.find(class_='videos')
     for i, video in enumerate(best_videos):
         tr = soup.new_tag('tr')
-        #id
+        # id
         th_id = soup.new_tag('th')
         th_id.string = str(i + 1)
         tr.append(th_id)
@@ -49,33 +55,62 @@ def update_information():
         th_data = soup.new_tag('th')
         th_data.string = video.data
         tr.append(th_data)
-        # description
-        th_description = soup.new_tag('th')
-        th_description.string = video.description
-        tr.append(th_description)
+        # link
+        th_link = soup.new_tag('th')
+        # www.youtube.com/embed/ - good example also
+        link_str = "https://youtu.be/" + video.id
+        link = soup.new_tag('a', href = link_str)
+        link.string = "watch"
+        th_link.append(link)
+        tr.append(th_link)
         tbody_found.append(tr)
     html.close()
 
-    output_file = open('index2.html', 'w')
-    print(soup.prettify('latin-1').decode('utf-8'), file=output_file)
+    output_file = open('index2.html', 'w', encoding="utf-8")
+    print(soup, file=output_file)
     output_file.close()
 
 
+def get_cur_time():
+    return datetime.datetime.utcnow()
+
+
+def convert_youtube_time(current):
+    return strftime("%Y-%m-%dT%H:%M:%SZ", current.timetuple())
+
+
+def parse_youtube_video(time_str):
+    time_str = time_str[:-1]
+    parts = re.split('-|\s|\.|:|T', time_str)
+    parts = [int(x) for x in parts]
+    temp = datetime.datetime(parts[0], parts[1], parts[2], parts[3], parts[4])
+    return strftime("%Y-%m-%d %H:%M UTC", temp.timetuple())
+    #return strftime("%Y-%m-%d %H:%M UTC", temp)
+
+
+
+# parametrs: current time in datetime and delta of timedelta class
+def minus_time(current, delta):
+    return current - delta
+
+
 def get_videos():
-    time = "2016-10-26T00:00:00Z"
-    GET_QUERY = BASE_URL + "&maxResults=" + str(MAX_RESULT) + "&publishedAfter=" + time + "&key=" + API_KEY
+    now = convert_youtube_time(get_cur_time())
+    week_ago = convert_youtube_time(minus_time(get_cur_time(), timedelta(days=7)))
+    GET_QUERY = BASE_URL + "&maxResults=" + str(MAX_RESULT) + "&publishedAfter=" + week_ago + "&key=" + API_KEY
     request = urllib.request.urlopen(GET_QUERY)
+
+    #parse_youtube_video("2016-10-20T13:06:45.000Z")
 
     videos = json.loads(request.read().decode(request.info().get_param('charset') or 'utf-8'))
     count = 0
     for video in videos['items']:
         try:
             count += 1
-            best_videos.append(Video(video['snippet']['title'], video['id']['videoId'], video['snippet']['publishedAt']))
-            print("New video №", count)
-            print("Video ID: ", video['id']['videoId'])
-            print("Video Title: ", video['snippet']['title'])
-            print("Data: ", video['snippet']['publishedAt'])
+            title = video['snippet']['title']
+            id = video['id']['videoId']
+            data = parse_youtube_video(video['snippet']['publishedAt'])
+            best_videos.append(Video(title, id, data))
         except:
             continue
 
