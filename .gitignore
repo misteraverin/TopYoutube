@@ -1,6 +1,6 @@
 # Exclude IDEA files
-.idea/misc.xml
+.idea
 __pycache__/
 config.py
 generator.py
-
+todo.md

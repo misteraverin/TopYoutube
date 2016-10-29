@@ -9,7 +9,8 @@
             src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link href="main.css" rel="stylesheet">
     <title>TopYoutube. Watch top youtube videos of the week</title>
-    </link></link></meta></head>
+
+</head>
 <body>
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
     <div class="container">
@@ -37,7 +38,7 @@
 
 
     </div>
-    <a name="watched" ></a>
+    <a name="watched"></a>
     <h2 style="padding-top: 70px;">Top Watched Videos of the Week</h2>
 
     <table class="table">
@@ -85,17 +86,33 @@
 <footer>
     <div class="container">
         <p class="text-center" style="padding-top: 15px;">
-
-
             Made with love by <a href="http://www.github.com/misteraverin">Max Averin</a><br>
-
-
             You can easily play and change it. <a href="github.com/misteraverin/topyoutube/">Fork me</a>
             </br></p>
     </div>
 </footer>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="bootstrap.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.navbar li').click(function (e) {
+            $('.navbar li.active').removeClass('active');
+            var $this = $(this);
+            if (!$this.hasClass('active')) {
+                $this.addClass('active');
+            }
+        });
+
+        $('.navbar-brand').click(function () {
+            $('.navbar li.active').removeClass('active');
+            var $this = $('.navbar li').first();
+            if (!$this.hasClass('active')) {
+                $this.addClass('active');
+            }
+        });
+
+    });
+</script>
 </body>
 </html>
 
