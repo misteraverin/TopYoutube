@@ -16,7 +16,7 @@ import config
 
 BASE_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet"
 BASE_DATA_URL = "https://www.googleapis.com/youtube/v3/videos?part=statistics"
-MAX_RESULT = 20
+MAX_RESULT = 10
 MAX_DISPLAYED = 10
 TOTAL_VIDEOS = 10000
 
@@ -85,6 +85,7 @@ def update_information(type, videos):
         tr.append(th_title)
         # data
         th_data = soup.new_tag('th')
+        th_data['class'] = "visible"
         th_data.string = video.data
         tr.append(th_data)
         # watches, likes, comments
@@ -95,6 +96,7 @@ def update_information(type, videos):
             th_info.string = str(video.likes)
         elif (type == 3):
             th_info.string = str(video.watches)
+        th_info['class'] = "visible"
         tr.append(th_info)
         tbody_found.append(tr)
     html.close()

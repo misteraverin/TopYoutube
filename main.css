@@ -31,11 +31,14 @@ footer.container {
     font-weight: bold;
 }
 
-.visiable {
+.visible {
     visibility: visible;
 }
 
-.unvisible {
-    visibility: hidden;
-    display: none;
+
+@media (max-width: 480px){
+    .visible{
+        visibility: hidden;
+        display: none;
+    }
 }
