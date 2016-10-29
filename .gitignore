@@ -1,4 +1,4 @@
-#
+# Exclude IDEA files
 .idea/
 __pycache__/
 config.py
