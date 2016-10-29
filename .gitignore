@@ -1,5 +1,5 @@
 # Exclude IDEA files
-.idea/
+.idea/misc.xml
 __pycache__/
 config.py
 generator.py
