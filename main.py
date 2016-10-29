@@ -7,16 +7,16 @@ import requests
 import json
 import re
 import sys
-import urllib.request
 from datetime import timedelta
 from time import strftime
 from bs4 import BeautifulSoup
+import config
 
 # constants
-API_KEY = "AIzaSyAc5hS42qW0TcJ8kGjQct6eIF13teg59VA"
+
 BASE_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet"
 BASE_DATA_URL = "https://www.googleapis.com/youtube/v3/videos?part=statistics"
-MAX_RESULT = 10
+MAX_RESULT = 20
 MAX_DISPLAYED = 10
 TOTAL_VIDEOS = 10000
 
@@ -128,17 +128,20 @@ def parse_youtube_video(time_str):
 def minus_time(current, delta):
     return current - delta
 
+
 def comment(video):
     return video.comments
+
 
 def likes(video):
     return video.likes
 
 
-def get_stats():
-    global best_watched, best_liked, best_commented
+# boolean most_popular - call from most popular or not
+def get_stats(most_popular):
+    global best_watched, best_liked, best_commented, current_videos
     ids = ','.join([str(video.id) for video in current_videos])
-    GET_QUERY = BASE_DATA_URL + "&id=" + ids + "&key=" + API_KEY
+    GET_QUERY = BASE_DATA_URL + "&id=" + ids + "&key=" + config.API_KEY
     videos = requests.get(GET_QUERY).json()
 
     for old_video in current_videos:
@@ -146,15 +149,23 @@ def get_stats():
         for video in videos['items']:
             if (video['id'] == find):
                 watches = int(video['statistics']['viewCount'])
-                comments = int(video['statistics']["dislikeCount"])
+                comments = 0
+                try:
+                    comments = int(video['statistics']['commentCount'])
+                except:
+                    comments = 0
                 likes = int(video['statistics']['likeCount'])
-                best_watched.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
-                best_commented.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
-                best_liked.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
+                if (most_popular):
+                    best_watched.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
+                else:
+                    best_commented.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
+                    best_liked.append(Video(old_video.title, old_video.id, old_video.data, watches, comments, likes))
                 break
-    best_watched.sort(reverse=True)
-    best_commented.sort(key=lambda x : int(x.comments), reverse=True)
-    best_liked.sort(key=lambda x : int(x.likes), reverse=True)
+    if (most_popular):
+        best_watched.sort(reverse=True)
+        current_videos = []
+    best_commented.sort(key=lambda x: int(x.comments), reverse=True)
+    best_liked.sort(key=lambda x: int(x.likes), reverse=True)
 
 
 def get_popular_videos():
@@ -162,7 +173,7 @@ def get_popular_videos():
     week_ago = convert_youtube_time(minus_time(get_cur_time(), timedelta(days=7)))
     most_popular = "&chart=mostPopular"
     GET_QUERY = "https://www.googleapis.com/youtube/v3/videos" + "?part=snippet&maxResults=" + str(MAX_RESULT) + \
-                most_popular + "&key=" + API_KEY + "&publishedAfter=" + week_ago
+                most_popular + "&key=" + config.API_KEY + "&publishedAfter=" + week_ago
 
     videos = requests.get(GET_QUERY).json()
 
@@ -175,14 +186,14 @@ def get_popular_videos():
         except:
             print(sys.exc_info()[0])
             continue
-    get_stats()
+    get_stats(1)
 
 
 def get_videos():
     global current_videos
     current_videos = []
     week_ago = convert_youtube_time(minus_time(get_cur_time(), timedelta(days=7)))
-    GET_QUERY = BASE_URL + "&maxResults=" + str(MAX_RESULT) + "&publishedAfter=" + week_ago + "&key=" + API_KEY
+    GET_QUERY = BASE_URL + "&maxResults=" + str(MAX_RESULT) + "&publishedAfter=" + week_ago + "&key=" + config.API_KEY
 
     videos = requests.get(GET_QUERY).json()
 
@@ -194,11 +205,15 @@ def get_videos():
             current_videos.append(Video(title, id, data))
         except:
             continue
-    get_stats()
+    get_stats(0)
 
 
 def main():
     global best_watched, best_liked, best_commented
+    with open('template.html', mode='r', encoding='utf-8') as input:
+        with open('index.html', mode='w') as output:
+            for line in input:
+                output.write(line)
     get_popular_videos()
     get_videos()
     update_information(1, best_commented)
